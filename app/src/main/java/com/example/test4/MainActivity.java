@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import android.app.Activity;
@@ -41,19 +42,50 @@ public class MainActivity extends AppCompatActivity {
     private HealthConnectionErrorResult mConnError;
     private final Set<HealthPermissionManager.PermissionKey> mKeySet;
     private HealthResultHolder<HealthDataResolver.ReadResult> result;
+//    private HealthDataStore mStore;
+//    Set<PermissionKey> mKeys = new HashSet<PermissionKey>();
 //    private final WeakReference<Activity> mInstance;
 
 //    private static MainActivity mInstance = null;
 //    private HealthDataStore mStore;
 //    private HealthConnectionErrorResult mConnError;
 //    private Set<PermissionKey> mKeySet;
+    private final HealthResultHolder.ResultListener<HealthPermissionManager.PermissionResult> mPermissionListener =
+        new HealthResultHolder.ResultListener<HealthPermissionManager.PermissionResult>() {
 
-    MainActivity(Activity mInstance){
+            @Override
+            public void onResult(HealthPermissionManager.PermissionResult result) {
+
+                Map<HealthPermissionManager.PermissionKey, Boolean> resultMap = result.getResultMap();
+
+                if (resultMap.values().contains(Boolean.FALSE)) {
+                    Log.d(APP_TAG, "All required permissions are not granted.");
+                } else {
+                    Log.d(APP_TAG, "All required permissions are granted.");
+                    //Access health data
+                }
+            }
+        };
+    public void requestPermission() {
+
+        // Acquire permission
+        HealthPermissionManager pmsManager = new HealthPermissionManager(mStore);
+        mKeySet.add(new HealthPermissionManager.PermissionKey(HealthConstants.HeartRate.HEALTH_DATA_TYPE, HealthPermissionManager.PermissionType.READ));
+        mKeySet.add(new HealthPermissionManager.PermissionKey(HealthConstants.BloodPressure.HEALTH_DATA_TYPE, HealthPermissionManager.PermissionType.READ));
+        mKeySet.add(new HealthPermissionManager.PermissionKey(HealthConstants.OxygenSaturation.HEALTH_DATA_TYPE, HealthPermissionManager.PermissionType.READ));
+
+        try {
+            pmsManager.requestPermissions(mKeySet, MainActivity.this).setResultListener(mPermissionListener);
+        } catch (Exception e) {
+            Log.d(APP_TAG, "requestPermissions() fails");
+        }
+    }
+    MainActivity(){
 //        this.mInstance = new WeakReference<>(mInstance);
         mKeySet = new HashSet<>();
 //        mKeySet.add(new HealthPermissionManager.PermissionKey("com.samsung.shealth.step_daily_trend", HealthPermissionManager.PermissionType.READ));
-        mKeySet.add(new HealthPermissionManager.PermissionKey(HealthConstants.StepCount.HEALTH_DATA_TYPE, HealthPermissionManager.PermissionType.READ));
-        mKeySet.add(new HealthPermissionManager.PermissionKey(HealthConstants.HeartRate.HEALTH_DATA_TYPE, HealthPermissionManager.PermissionType.READ));
+//        mKeySet.add(new HealthPermissionManager.PermissionKey(HealthConstants.StepCount.HEALTH_DATA_TYPE, HealthPermissionManager.PermissionType.READ));
+//        mKeySet.add(new HealthPermissionManager.PermissionKey(HealthConstants.HeartRate.HEALTH_DATA_TYPE, HealthPermissionManager.PermissionType.READ));
 //        HealthDataService healthDataService = new HealthDataService();
 
 //        try {
@@ -89,6 +121,12 @@ public class MainActivity extends AppCompatActivity {
 //        mStore = new HealthDataStore(this, mConnectionListener);
 //        // Request the connection to the health data store
 //        mStore.connectService();
+        HealthPermissionManager pmsManager = new HealthPermissionManager(mStore);
+        Map<HealthPermissionManager.PermissionKey, Boolean> resultMap = pmsManager.isPermissionAcquired(mKeySet);
+
+        if (!resultMap.containsValue(Boolean.FALSE)) {
+            System.out.println("SUCCESS");
+        }
     }
 
     @Override
@@ -116,7 +154,24 @@ public class MainActivity extends AppCompatActivity {
     public void getVitals(View v) {
         // Do something in response to button click
         // System.out.println("CLICKED");
-        System.out.println(new HealthPermissionManager.PermissionKey(HealthConstants.StepCount.HEALTH_DATA_TYPE, HealthPermissionManager.PermissionType.READ));
+//        System.out.println(mKeySet);
+        HealthData h = new HealthData();
+
+        System.out.println(HealthConstants.HeartRate.HEALTH_DATA_TYPE);
+//        System.out.println(h.getSourceDevice());
+////        HealthPermissionManager pmsManager = new HealthPermissionManager(mStore);
+////        Map<HealthPermissionManager.PermissionKey, Boolean> resultMap = pmsManager.isPermissionAcquired(mKeySet);
+//        System.out.println(HealthConstants.HeartRate.BINNING_DATA);
+        if (h.getSourceDevice() == null) {
+            System.out.println("There's been an error: No Detection found");
+        } else {
+            requestPermission();
+//            for ( x : mKeySet) System.out.println(x);
+            System.out.println(HealthConstants.HeartRate.HEALTH_DATA_TYPE);
+            System.out.println(HealthConstants.BloodPressure.HEALTH_DATA_TYPE);
+            System.out.println(HealthConstants.OxygenSaturation.HEALTH_DATA_TYPE);
+        }
+
 
     }
 
